@@ -1,0 +1,22 @@
+{
+    "operations": [
+	      {
+		        "id": "show_on_console",
+		        "message": "Show on console: %1",
+		        "arguments": [
+			          {
+				            "type": "value",
+				            "class": "string",
+				            "title": "message"
+			          }
+		        ],
+            "command": "echo"
+	      }
+    ],
+    "events": [
+        {
+            "id": "on_new_temparature",
+            "message": "On new temperature measure"
+        }
+    ]
+}
