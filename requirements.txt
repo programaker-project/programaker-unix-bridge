@@ -1,0 +1,5 @@
+# Plaza
+plaza-service
+
+# XDG
+xdg

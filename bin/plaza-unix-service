@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+
+import logging
+import sys
+import json
+from plaza_service import (
+    PlazaService,
+    ServiceConfiguration,
+)
+
+from plaza_unix_service import config
+
+
+class UnixService(PlazaService):
+    def __init__(self, service_configuration, *args, **kwargs):
+        PlazaService.__init__(self, *args, **kwargs)
+        self.configuration = service_configuration
+        self.configuration.emit_event = self.on_emit_event
+
+    def on_emit_event(self, event_id, data):
+        PlazaService.emit_event_sync(
+            self,
+            to_user=None,
+            key=event_id,
+            content=data)
+
+
+    async def handle_call(self, function_name, arguments, extra_data):
+        logging.info(
+            "{}({}) # {}".format(
+                function_name, ", ".join(arguments), extra_data.user_id
+            )
+        )
+        return await self.configuration.handle_call(function_name, arguments, extra_data)
+
+    def handle_configuration(self):
+        return ServiceConfiguration(
+            service_name="Unix service",
+            is_public=False,
+            blocks=self.configuration.get_service_blocks()
+        )
+
+
+if __name__ == "__main__":
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
+
+    bridge_endpoint = config.get_bridge_endpoint()
+
+    service = UnixService(config.get_default_configuration(),
+                          bridge_endpoint)
+    service.run()
+
