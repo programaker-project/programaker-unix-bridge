@@ -134,8 +134,11 @@ class UnixServiceConfigurationLoader:
                 )
 
     def create_block(self, block_description):
-        block_type = block_description.get('type', 'operation')
-        assert block_type == "operation"
+        block_type = {
+            'operation': BlockType.OPERATION,
+            'getter': BlockType.GETTER,
+        }[block_description.get('type', 'operation')]
+
         self.add_function_definition(block_description["id"],
                                      block_description)
 
@@ -149,7 +152,7 @@ class UnixServiceConfigurationLoader:
                         in block_description.get("arguments", [])
                     ],
                     save_to=None,
-                    block_type=BlockType.OPERATION,
+                    block_type=block_type,
                 )
 
     def create_argument(self, argument):
