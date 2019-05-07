@@ -1,17 +1,24 @@
 {
     "operations": [
-	      {
-		        "id": "show_on_console",
-		        "message": "Show on console: %1",
-		        "arguments": [
-			          {
-				            "type": "value",
-				            "class": "string",
-				            "title": "message"
-			          }
-		        ],
-            "command": "echo"
-	      }
+    	    {
+		    "id": "get_temperature",
+		    "message": "get_temperature",
+		    "type": "getter",
+		    "command": ["sh", "-c", "acpi -t|awk '{print $4;}'"]
+	    },
+	    {
+		    "id": "show_on_console",
+		    "message": "Show on console %1",
+		    "type": "operation",
+		     "arguments": [  
+			     {
+				     "type": "value",
+                                     "class": "string",
+                                     "title": "message"
+                             }
+                    ],
+		    "command": "sh show_on_console.sh $1"
+	    }
     ],
     "events": [
         {

@@ -6,6 +6,9 @@ import logging
 from xdg import XDG_CONFIG_HOME, XDG_DATA_HOME
 import threading
 import subprocess
+import shlex
+import re
+import copy
 
 from plaza_service import (
     ServiceBlock,
@@ -43,6 +46,19 @@ def _save_config(config):
 CLASS_TO_TYPE = {
     "string": str
 }
+
+
+def replace_args(command, args):
+    assert isinstance(command, list)
+    new_command = copy.copy(command)
+    for i, chunk in enumerate(command):
+        match = re.match(r'^\$(\d+)$', chunk)
+        if match is None:
+            continue
+
+        new_command[i] = args[int(match.group(1)) - 1]
+    return new_command
+
 
 class PipeManager(threading.Thread):
     def __init__(self, block, unix_service):
@@ -85,6 +101,7 @@ class PipeManager(threading.Thread):
 
 class UnixServiceConfigurationLoader:
     def __init__(self, path):
+        self.config_path = path
         self.data = json.load(open(os.path.join(path, 'blocks.json')))
         self.pipe_managers = {}
         self.functions = {}
@@ -101,11 +118,13 @@ class UnixServiceConfigurationLoader:
     async def run_block(self, block, args, extra):
         command = block["command"]
         if isinstance(command, list):
-            params = command + args
+            params = command
         else:
-            params = [command] + args
-        logging.debug("Running: {}".format(params))
-        return subprocess.call(params)
+            params = shlex.split(command)
+
+        params = replace_args(params, args)
+        logging.info("Running: {}".format(params))
+        return subprocess.check_output(params, cwd=self.config_path).decode('utf-8')
 
     def get_service_blocks(self):
         blocks = []
