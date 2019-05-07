@@ -109,10 +109,10 @@ class UnixServiceConfigurationLoader:
 
     def get_service_blocks(self):
         blocks = []
-        for block in self.data["events"]:
+        for block in self.data.get("events", []):
             blocks.append(self.create_event(block))
 
-        for block in self.data["operations"]:
+        for block in self.data.get("operations", []):
             blocks.append(self.create_block(block))
 
         return blocks
@@ -170,7 +170,7 @@ def get_default_configuration():
         blocks_file = os.path.join(conf_dir, 'blocks.json')
         if not os.path.exists(blocks_file):
             with open(blocks_file, 'wt') as f:
-                json.dump({ 'blocks': [] }, f, indent=4)
+                json.dump({ 'operations': [], 'events': [] }, f, indent=4)
             logging.info("Created block definition file at: {}".format(
                 blocks_file
             ))
