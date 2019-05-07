@@ -2,7 +2,7 @@
     "operations": [
     	    {
 		    "id": "get_temperature",
-		    "message": "get_temperature",
+		    "message": "Get temperature",
 		    "type": "getter",
 		    "command": ["sh", "-c", "acpi -t|awk '{print $4;}'"]
 	    },
