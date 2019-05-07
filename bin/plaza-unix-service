@@ -2,6 +2,7 @@
 
 import logging
 import sys
+import socket
 import json
 from plaza_service import (
     PlazaService,
@@ -10,6 +11,8 @@ from plaza_service import (
 
 from plaza_unix_service import config
 
+def get_hostname():
+    return socket.getfqdn()
 
 class UnixService(PlazaService):
     def __init__(self, service_configuration, *args, **kwargs):
@@ -35,7 +38,7 @@ class UnixService(PlazaService):
 
     def handle_configuration(self):
         return ServiceConfiguration(
-            service_name="Unix service",
+            service_name="Unix at {}".format(get_hostname()),
             is_public=False,
             blocks=self.configuration.get_service_blocks()
         )
