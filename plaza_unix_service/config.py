@@ -105,6 +105,8 @@ class UnixServiceConfigurationLoader:
         self.data = json.load(open(os.path.join(path, 'blocks.json')))
         self.pipe_managers = {}
         self.functions = {}
+        self._remove_old_pipes()
+        self.service_blocks = self._get_service_blocks()
 
     async def handle_call(self, function_name, arguments, extra_data):
         return await self.functions[function_name](arguments, extra_data)
@@ -126,7 +128,7 @@ class UnixServiceConfigurationLoader:
         logging.info("Running: {}".format(params))
         return subprocess.check_output(params, cwd=self.config_path).decode('utf-8')
 
-    def get_service_blocks(self):
+    def _get_service_blocks(self):
         blocks = []
         for block in self.data.get("events", []):
             blocks.append(self.create_event(block))
@@ -135,6 +137,13 @@ class UnixServiceConfigurationLoader:
             blocks.append(self.create_block(block))
 
         return blocks
+
+    def get_service_blocks(self):
+        return copy.deepcopy(self.service_blocks)
+
+    def _remove_old_pipes(self):
+        for pipe_name in os.listdir(pipe_dir):
+            os.unlink(os.path.join(pipe_dir, pipe_name))
 
     def create_event(self, block_description):
         self.pipe_managers[block_description["id"]] = pipe = PipeManager(
