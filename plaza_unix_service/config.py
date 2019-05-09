@@ -96,7 +96,7 @@ class PipeManager(threading.Thread):
         try:
             data = json.loads(buff)
         except:
-            data = buff.decode("utf-8")
+            data = buff
         self.unix_service.emit_event(self.id, data)
 
 class UnixServiceConfigurationLoader:
