@@ -31,7 +31,7 @@ class UnixService(PlazaService):
     async def handle_call(self, function_name, arguments, extra_data):
         logging.info(
             "{}({}) # {}".format(
-                function_name, ", ".join(arguments), extra_data.user_id
+                function_name, ", ".join(map(str, arguments)), extra_data.user_id
             )
         )
         return await self.configuration.handle_call(function_name, arguments, extra_data)

@@ -125,6 +125,7 @@ class UnixServiceConfigurationLoader:
             params = shlex.split(command)
 
         params = replace_args(params, args)
+        params = list(map(str, params))
         logging.info("Running: {}".format(params))
         return subprocess.check_output(params, cwd=self.config_path).decode('utf-8')
 
