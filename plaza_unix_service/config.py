@@ -1,3 +1,5 @@
+from .monitor_manager import MonitorManager
+
 import getpass
 import json
 import os
@@ -106,6 +108,8 @@ class UnixServiceConfigurationLoader:
         self.pipe_managers = {}
         self.functions = {}
         self._remove_old_pipes()
+        self.monitors = {}
+
         self.service_blocks = self._get_service_blocks()
 
     async def handle_call(self, function_name, arguments, extra_data):
@@ -117,7 +121,7 @@ class UnixServiceConfigurationLoader:
                                                         args,
                                                         extra))
 
-    async def run_block(self, block, args, extra):
+    def run_block(self, block, args, extra):
         command = block["command"]
         if isinstance(command, list):
             params = command
@@ -126,13 +130,16 @@ class UnixServiceConfigurationLoader:
 
         params = replace_args(params, args)
         params = list(map(str, params))
-        logging.info("Running: {}".format(params))
+        logging.info("[{}] Running: {}".format(block["id"], params))
         return subprocess.check_output(params, cwd=self.config_path).decode('utf-8')
 
     def _get_service_blocks(self):
         blocks = []
         for block in self.data.get("events", []):
             blocks.append(self.create_event(block))
+
+        for block in self.data.get("monitors", []):
+            blocks.append(self.create_monitor(block))
 
         for block in self.data.get("operations", []):
             blocks.append(self.create_block(block))
@@ -150,6 +157,22 @@ class UnixServiceConfigurationLoader:
         self.pipe_managers[block_description["id"]] = pipe = PipeManager(
             block_description, self)
         pipe.start()
+
+        return ServiceTriggerBlock(
+                    id=block_description["id"],
+                    function_name=block_description["id"],
+                    message=(block_description["message"].rstrip('. ')
+                             + '. Set %1'),
+                    arguments=[
+                        VariableBlockArgument(),
+                    ],
+                    save_to=BlockContext.ARGUMENTS[0],
+                )
+
+    def create_monitor(self, block_description):
+        self.monitors[block_description["id"]] = monitor = MonitorManager(
+            block_description, self)
+        monitor.start()
 
         return ServiceTriggerBlock(
                     id=block_description["id"],

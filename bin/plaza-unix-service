@@ -53,4 +53,3 @@ if __name__ == "__main__":
     service = UnixService(config.get_default_configuration(),
                           bridge_endpoint)
     service.run()
-

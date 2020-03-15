@@ -1,29 +1,67 @@
 {
     "operations": [
-    	    {
-		    "id": "get_temperature",
-		    "message": "Get temperature",
-		    "type": "getter",
-		    "command": ["sh", "-c", "acpi -t|awk '{print $4;}'"]
-	    },
-	    {
-		    "id": "show_on_console",
-		    "message": "Show on console %1",
-		    "type": "operation",
-		     "arguments": [  
-			     {
-				     "type": "value",
-                                     "class": "string",
-                                     "title": "message"
-                             }
-                    ],
-		    "command": "sh show_on_console.sh $1"
-	    }
+    	  {
+		        "id": "get_temperature",
+		        "message": "Get temperature",
+		        "type": "getter",
+		        "command": ["sh", "-c", "acpi -t|awk '{print $4;}'"]
+	      },
+        {
+            "id": "get_battery",
+            "message": "Get battery",
+            "type": "getter",
+            "command": ["sh", "-c", "acpi -b|cut -d, -f2|tr -d ' %'"]
+        },
+	      {
+		        "id": "show_on_console",
+		        "message": "Show on console %1",
+		        "type": "operation",
+		        "arguments": [
+			          {
+				            "type": "value",
+                    "class": "string",
+                    "title": "message"
+                }
+            ],
+		        "command": "sh show_on_console.sh $1"
+	      },
+	      {
+		        "id": "show_notification",
+		        "message": "Notification: Title: %1; message: %2",
+		        "type": "operation",
+		        "arguments": [
+			          {
+				            "type": "value",
+                    "class": "string",
+                    "title": "title"
+                },
+			          {
+				            "type": "value",
+                    "class": "string",
+                    "title": "message"
+                }
+            ],
+		        "command": "notify-send $1 $2"
+	      }
+    ],
+    "monitors": [
+        {
+            "id": "on_new_battery",
+            "message": "On new battery measure",
+            "frequency": "10s",
+            "command": ["sh", "-c", "acpi -b|cut -d, -f2|tr -d ' %'|grep -v ^0$"]
+        },
+        {
+            "id": "on_new_temperature",
+            "message": "On new temperature measure",
+            "frequency": "10s",
+		        "command": ["sh", "-c", "acpi -t|awk '{print $4;}'"]
+        }
     ],
     "events": [
         {
-            "id": "on_new_temparature",
-            "message": "On new temperature measure"
+            "id": "event",
+            "message": "On new event"
         }
     ]
 }
