@@ -242,3 +242,13 @@ def get_bridge_endpoint():
             raise Exception("No bridge endpoint introduced")
         _save_config(config)
     return config[PLAZA_BRIDGE_ENDPOINT_INDEX]
+
+
+def get_bridge_token():
+    config = _get_config()
+    if config.get(PLAZA_BRIDGE_TOKEN_INDEX, None) is None:
+        config[PLAZA_BRIDGE_TOKEN_INDEX] = input("Plaza bridge token: ")
+        if not config[PLAZA_BRIDGE_TOKEN_INDEX]:
+            raise Exception("No bridge token introduced")
+        _save_config(config)
+    return config[PLAZA_BRIDGE_TOKEN_INDEX]

@@ -49,7 +49,9 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.INFO)
 
     bridge_endpoint = config.get_bridge_endpoint()
+    bridge_token = config.get_bridge_token()
 
-    service = UnixService(config.get_default_configuration(),
-                          bridge_endpoint)
+    service = UnixService(
+        config.get_default_configuration(), bridge_endpoint, bridge_token
+    )
     service.run()
