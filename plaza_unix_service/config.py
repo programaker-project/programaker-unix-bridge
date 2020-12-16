@@ -8,21 +8,20 @@ import shlex
 import subprocess
 import threading
 
-from plaza_service import (
-    BlockArgument,
-    BlockContext,
-    BlockType,
-    DynamicBlockArgument,
-    ServiceBlock,
-    ServiceTriggerBlock,
-    VariableBlockArgument,
-    VariableClass,
-)
+from plaza_service import (BlockArgument, BlockContext, BlockType,
+                           DynamicBlockArgument, ServiceBlock,
+                           ServiceTriggerBlock, VariableBlockArgument,
+                           VariableClass)
 from xdg import XDG_CONFIG_HOME, XDG_DATA_HOME
 
 from .monitor_manager import MonitorManager
 
+PLAZA_BRIDGE_ENDPOINT_ENV = "BRIDGE_ENDPOINT"
+PLAZA_BRIDGE_TOKEN_ENV = "BRIDGE_TOKEN"
+UNIX_SERVICE_CONFIG_PATH_ENV = "CONFIG_PATH"
+
 PLAZA_BRIDGE_ENDPOINT_INDEX = "plaza_bridge_endpoint"
+PLAZA_BRIDGE_TOKEN_INDEX = "plaza_bridge_token"
 UNIX_SERVICE_CONFIG_PATH_INDEX = "unix_service_configuration_path"
 
 global directory, config_file
@@ -113,7 +112,7 @@ class UnixServiceConfigurationLoader:
         self.service_blocks = self._get_service_blocks()
 
     async def handle_call(self, function_name, arguments, extra_data):
-        return await self.functions[function_name](arguments, extra_data)
+        return self.functions[function_name](arguments, extra_data)
 
     def add_function_definition(self, function_name, block):
         self.functions[function_name] = lambda args, extra: self.run_block(
@@ -130,7 +129,11 @@ class UnixServiceConfigurationLoader:
         params = replace_args(params, args)
         params = list(map(str, params))
         logging.info("[{}] Running: {}".format(block["id"], params))
-        return subprocess.check_output(params, cwd=self.config_path).decode("utf-8")
+        result = subprocess.check_output(params, cwd=self.config_path).decode("utf-8")
+        try:
+            return json.loads(result)
+        except:
+            return result
 
     def _get_service_blocks(self):
         blocks = []
@@ -149,8 +152,9 @@ class UnixServiceConfigurationLoader:
         return copy.deepcopy(self.service_blocks)
 
     def _remove_old_pipes(self):
-        for pipe_name in os.listdir(pipe_dir):
-            os.unlink(os.path.join(pipe_dir, pipe_name))
+        if os.path.exists(pipe_dir):
+            for pipe_name in os.listdir(pipe_dir):
+                os.unlink(os.path.join(pipe_dir, pipe_name))
 
     def create_event(self, block_description):
         self.pipe_managers[block_description["id"]] = pipe = PipeManager(
@@ -207,6 +211,12 @@ class UnixServiceConfigurationLoader:
     def create_argument(self, argument):
         if argument["type"] == "value":
             return BlockArgument(CLASS_TO_TYPE[argument["class"]], argument["title"])
+        elif argument["type"] == "callback":
+            raise NotImplementedError("'callback' arguments not yet supported")
+        else:
+            raise NotImplementedError(
+                "Only type='value' or 'callback' arguments are supported"
+            )
 
     def emit_event(self, id, data):
         raise NotImplementedError(
@@ -217,9 +227,14 @@ class UnixServiceConfigurationLoader:
 def get_default_configuration():
     config = _get_config()
     if config.get(UNIX_SERVICE_CONFIG_PATH_INDEX, None) is None:
-        config[UNIX_SERVICE_CONFIG_PATH_INDEX] = conf_dir = os.path.join(
-            XDG_DATA_HOME, "plaza", "bridges", "unix"
-        )
+
+        env = os.getenv(UNIX_SERVICE_CONFIG_PATH_ENV, None)
+        if env is not None:
+            config[UNIX_SERVICE_CONFIG_PATH_INDEX] = conf_dir = env
+        else:
+            config[UNIX_SERVICE_CONFIG_PATH_INDEX] = conf_dir = os.path.join(
+                XDG_DATA_HOME, "plaza", "bridges", "unix"
+            )
 
         os.makedirs(conf_dir, exist_ok=True)
         blocks_file = os.path.join(conf_dir, "blocks.json")
@@ -233,6 +248,10 @@ def get_default_configuration():
 
 
 def get_bridge_endpoint():
+    env = os.getenv(PLAZA_BRIDGE_ENDPOINT_ENV, None)
+    if env is not None:
+        return env
+
     config = _get_config()
     if config.get(PLAZA_BRIDGE_ENDPOINT_INDEX, None) is None:
         config[PLAZA_BRIDGE_ENDPOINT_INDEX] = input("Plaza bridge endpoint: ")
@@ -243,6 +262,10 @@ def get_bridge_endpoint():
 
 
 def get_bridge_token():
+    env = os.getenv(PLAZA_BRIDGE_TOKEN_ENV, None)
+    if env is not None:
+        return env
+
     config = _get_config()
     if config.get(PLAZA_BRIDGE_TOKEN_INDEX, None) is None:
         config[PLAZA_BRIDGE_TOKEN_INDEX] = input("Plaza bridge token: ")
