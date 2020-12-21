@@ -31,16 +31,13 @@ class MonitorManager(threading.Thread):
         logging.debug("[{}] 5 seconds for startup".format(self.block["id"]))
         time.sleep(5)
         while True:
-            result = self.unix_service.run_block(self.block, (), None).strip()
+            result = self.unix_service.run_block(self.block, (), None)
+            if isinstance(result, str):
+                result = result.strip()
 
             logging.debug("[{}] Result: {}".format(self.block["id"], result))
             self.process(result)
             time.sleep(freq)
 
-    def process(self, buff):
-        try:
-            data = json.loads(buff)
-        except:
-            data = buff
-
+    def process(self, data):
         self.unix_service.emit_event(self.id, data)
