@@ -39,6 +39,9 @@ class UnixService(PlazaService):
             function_name, arguments, extra_data
         )
 
+    async def handle_data_callback(self, name, extra_data):
+        return await self.configuration.handle_data_callback(name, extra_data)
+
     def handle_configuration(self):
         return ServiceConfiguration(
             service_name=os.getenv("BRIDGE_NAME", "Unix at {}".format(get_hostname())),

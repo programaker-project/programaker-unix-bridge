@@ -108,11 +108,15 @@ class UnixServiceConfigurationLoader:
         self.functions = {}
         self._remove_old_pipes()
         self.monitors = {}
+        self.callbacks = {}
 
         self.service_blocks = self._get_service_blocks()
 
     async def handle_call(self, function_name, arguments, extra_data):
         return self.functions[function_name](arguments, extra_data)
+
+    async def handle_data_callback(self, name, extra_data):
+        return self.callbacks[name]
 
     def add_function_definition(self, function_name, block):
         self.functions[function_name] = lambda args, extra: self.run_block(
@@ -201,18 +205,26 @@ class UnixServiceConfigurationLoader:
             function_name=block_description["id"],
             message=block_description["message"],
             arguments=[
-                self.create_argument(argument)
+                self.create_argument(argument, block_description["id"])
                 for argument in block_description.get("arguments", [])
             ],
             save_to=None,
             block_type=block_type,
         )
 
-    def create_argument(self, argument):
+    def create_callback(self, name, data):
+        self.callbacks[name] = data
+
+    def create_argument(self, argument, block_id):
         if argument["type"] == "value":
             return BlockArgument(CLASS_TO_TYPE[argument["class"]], argument["title"])
         elif argument["type"] == "callback":
-            raise NotImplementedError("'callback' arguments not yet supported")
+            with open(os.path.join(self.config_path, argument["source_file"])) as f:
+                data = json.load(f)
+
+            callback_name = block_id + "_" + argument["title"]
+            self.create_callback(callback_name, data)
+            return DynamicBlockArgument(CLASS_TO_TYPE[argument["class"]], callback_name)
         else:
             raise NotImplementedError(
                 "Only type='value' or 'callback' arguments are supported"

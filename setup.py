@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="programaker-unix-bridge",
-    version="0.0.1",
+    version="0.0.1.post8",
     description="Unix-like abstraction to create Programaker bridges.",
     author="kenkeiras",
     author_email="kenkeiras@codigoparallevar.com",
